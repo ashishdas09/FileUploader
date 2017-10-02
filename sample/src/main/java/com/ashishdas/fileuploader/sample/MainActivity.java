@@ -29,6 +29,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ashishdas.fileuploader.FileUploader;
+import com.ashishdas.fileuploader.FileUploaderException;
+import com.ashishdas.fileuploader.FileUploaderListener;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -36,7 +39,7 @@ import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.PermissionRequest;
 import com.karumi.dexter.listener.single.PermissionListener;
 
-public class MainActivity extends AppCompatActivity  implements View.OnClickListener
+public class MainActivity extends AppCompatActivity implements View.OnClickListener
 {
 	private static final String TAG = MainActivity.class.getSimpleName();
 	private static final int ACTIVITY_REQUEST_CODE = 999;
@@ -69,8 +72,9 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
 		btnChooseImage.setOnClickListener(this);
 		btnUpload.setOnClickListener(this);
 
-		tvServerUrl.setText("");
+		tvServerUrl.setText("https://androidexample.com/media/UploadToServer.php");
 		mLastServerUrl = tvServerUrl.getText().toString();
+		FileUploader.startup(mContext, mLastServerUrl, null);
 
 		setUploadEnabled(false);
 	}
@@ -111,7 +115,15 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
 				String serverUrl = tvServerUrl.getText().toString().trim();
 				if (!TextUtils.isEmpty(serverUrl))
 				{
+					if (!mLastServerUrl.equals(serverUrl))
+					{
+						FileUploader.shutdown();
+						mLastServerUrl = serverUrl;
+						FileUploader.startup(mContext, serverUrl, null);
+
+					}
 					btnUpload.setEnabled(false);
+					FileUploader.upload(mImageFilePath, mFileUploaderListener);
 				}
 				break;
 		}
@@ -251,6 +263,61 @@ public class MainActivity extends AppCompatActivity  implements View.OnClickList
 		}
 		return realPath;
 	}
+
+	private FileUploaderListener mFileUploaderListener = new FileUploaderListener()
+	{
+		@Override
+		public void onStarted()
+		{
+			Log.d(TAG, "onStarted()");
+			pbUploadProgress.setProgress(0);
+		}
+
+		@Override
+		public void onConnecting()
+		{
+			Log.d(TAG, "onConnecting()");
+		}
+
+		@Override
+		public void onConnected()
+		{
+			Log.d(TAG, "onConnected()");
+		}
+
+		@Override
+		public void onUploading(final long finished, final long total, final int progress)
+		{
+			pbUploadProgress.setProgress(progress);
+			Log.d(TAG, "onUploading total: " + total + ", progress: " + progress);
+		}
+
+		@Override
+		public void onCompleted(final String serverResponse)
+		{
+			Log.d(TAG, "onCompleted()");
+			Toast.makeText(mContext, "ServerResponse : " + serverResponse, Toast.LENGTH_LONG).show();
+			btnUpload.setEnabled(true);
+		}
+
+		@Override
+		public void onPaused()
+		{
+			Log.d(TAG, "onPaused()");
+		}
+
+		@Override
+		public void onCanceled()
+		{
+			Log.d(TAG, "onCanceled()");
+		}
+
+		@Override
+		public void onFailed(final FileUploaderException e)
+		{
+			btnUpload.setEnabled(true);
+			Log.e(TAG, "onFailed() : " + e.getLocalizedMessage(), e);
+			Toast.makeText(mContext, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+		}
+	};
 }
-
-

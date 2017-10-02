@@ -9,7 +9,7 @@
               android:paddingRight="8dp"
               android:paddingTop="8dp"
               android:background="@color/colorPrimaryBg"
-              tools:context="com.ashishdas.fileuploader.sample.MainActivity">
+              tools:context="com.ashishdas.example.fileuploader.MainActivity">
 
     <TextView android:id="@+id/tv_server_url"
               android:layout_width="match_parent"
