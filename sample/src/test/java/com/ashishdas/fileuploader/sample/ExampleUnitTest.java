@@ -1,4 +1,4 @@
-package com.ashishdas.fileuploader.example;
+package com.ashishdas.fileuploader.sample;
 
 import org.junit.Test;
 

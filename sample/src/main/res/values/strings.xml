@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Fileuploader</string>
+    <string name="app_name">FileUploader</string>
+    <string name="hint_server_url">Server URL</string>
 </resources>

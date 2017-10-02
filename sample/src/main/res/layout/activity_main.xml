@@ -1,19 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="com.ashishdas.fileuploader.example.MainActivity">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:paddingBottom="8dp"
+              android:paddingLeft="8dp"
+              android:paddingRight="8dp"
+              android:paddingTop="8dp"
+              android:background="@color/colorPrimaryBg"
+              tools:context="com.ashishdas.fileuploader.sample.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <TextView android:id="@+id/tv_server_url"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:hint="@string/hint_server_url"
+              android:paddingBottom="8dp"
+              android:paddingTop="8dp"/>
+
+    <FrameLayout android:layout_width="match_parent"
+                 android:layout_height="wrap_content"
+                 android:paddingBottom="8dp"
+                 android:paddingTop="8dp">
+        <ImageView
+            android:id="@+id/iv_image_preview"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:scaleType="centerCrop"/>
+
+        <ImageButton
+            android:id="@+id/ib_delete"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_gravity="top|right"
+            android:src="@android:drawable/ic_delete"/>
+
+        <Button
+            android:id="@+id/btn_choose_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:background="#99000000"
+            android:text="Choose Image"
+            android:textColor="@android:color/white"/>
+    </FrameLayout>
+
+    <ProgressBar
+        android:id="@+id/pb_upload_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="0"
+        android:progressBackgroundTint="@color/colorPrimaryDark"/>
 
-</android.support.constraint.ConstraintLayout>
+    <Button
+        android:id="@+id/btn_upload"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="8dp"
+        android:paddingTop="8dp"
+        android:text="Upload"/>
+
+</LinearLayout>
