@@ -1,6 +1,6 @@
 /*******************************************************************************
- * FileUploadManager.java
- * FileUploadManager
+ * UploadManager.java
+ * UploadManager
  * <p>
  * Author(s): Ashish Das
  ******************************************************************************/
@@ -10,11 +10,13 @@ package com.ashishdas.fileuploader.internal;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.TextUtils;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.ashishdas.fileuploader.FileUploaderException;
-import com.ashishdas.fileuploader.FileUploaderListener;
+import com.ashishdas.fileuploader.FileUploadException;
+import com.ashishdas.fileuploader.FileUploadRequest;
+import com.ashishdas.fileuploader.FileUploadStatusListener;
+import com.ashishdas.fileuploader.FileUploadManager;
 
 import java.io.File;
 import java.util.LinkedHashMap;
@@ -22,18 +24,19 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class FileUploadManager
+public class UploadManager
 {
-	private static final String TAG = FileUploadManager.class.getSimpleName();
+	private static final String TAG = UploadManager.class.getSimpleName();
 	private static final int MAX_THREAD_NUMBER = 5;
 
 	private Context mContext;
 	private Map<String, Uploader> mUploaderMap;
 	private ExecutorService mExecutorService;
 	private UploadInfoDelivery mDelivery;
+	private FileUploadManager.OnAllTaskCompletedListener mAllTaskCompletedListener;
 	private Handler mHandler = new Handler(Looper.getMainLooper());
 
-	public FileUploadManager(final Context context)
+	public UploadManager(final Context context)
 	{
 		mContext = context;
 		mUploaderMap = new LinkedHashMap<>();
@@ -41,20 +44,21 @@ public class FileUploadManager
 		mDelivery = new UploadInfoDelivery(mHandler);
 	}
 
-	public void upload(String filePath, FileUploaderListener fileUploaderListener)
+	public void setAllTaskCompletedListener(final FileUploadManager.OnAllTaskCompletedListener allTaskCompletedListener)
+	{
+		mAllTaskCompletedListener = allTaskCompletedListener;
+	}
+
+	public void upload(final FileUploadRequest fileUploadRequest, final FileUploadStatusListener fileUploadStatusListener)
 	{
 		try
 		{
-			File file = new File(filePath);
-			if (!(file.exists() && file.isFile()))
+			Globals.assertFileUploadInfo(fileUploadRequest);
+			final String key = fileUploadRequest.getKey();
+			if (check(key))
 			{
-				throw new Exception("File is not exist");
-			}
-			final String key = getKey(filePath);
-			if (!TextUtils.isEmpty(key) && check(key))
-			{
-				UploadResponse uploadResponse = new UploadResponse(mDelivery, fileUploaderListener);
-				Uploader uploader = new Uploader(file, uploadResponse, mExecutorService, key, mFileUploaderDestroyedListener);
+				UploadResponse uploadResponse = new UploadResponse(fileUploadRequest, mDelivery, fileUploadStatusListener);
+				Uploader uploader = new Uploader(new File(fileUploadRequest.getFilePath()), uploadResponse, mExecutorService, key, mFileUploaderDestroyedListener);
 				mUploaderMap.put(key, uploader);
 				uploader.start();
 			}
@@ -63,18 +67,22 @@ public class FileUploadManager
 		{
 			Log.e(TAG, "upload()", e);
 
-			if (fileUploaderListener != null)
+			if (fileUploadStatusListener != null)
 			{
-				fileUploaderListener.onFailed(new FileUploaderException(e.getLocalizedMessage()));
+				fileUploadStatusListener.onFailed(fileUploadRequest, new FileUploadException(e.getLocalizedMessage()));
 			}
 		}
 	}
 
-	public boolean isRunning(String filePath)
+	public boolean isRunning(final @NonNull FileUploadRequest fileUploadRequest)
+	{
+		return isRunning(fileUploadRequest.getKey());
+	}
+
+	public boolean isRunning(final String key)
 	{
 		try
 		{
-			String key = getKey(filePath);
 			if (mUploaderMap.containsKey(key))
 			{
 				Uploader uploader = mUploaderMap.get(key);
@@ -91,11 +99,16 @@ public class FileUploadManager
 		return false;
 	}
 
-	public boolean pause(String filePath)
+
+	public boolean pause(final @NonNull FileUploadRequest fileUploadRequest)
+	{
+		return pause(fileUploadRequest.getKey());
+	}
+
+	public boolean pause(final String key)
 	{
 		try
 		{
-			String key = getKey(filePath);
 			if (mUploaderMap.containsKey(key))
 			{
 				Uploader uploader = mUploaderMap.get(key);
@@ -118,11 +131,15 @@ public class FileUploadManager
 		return false;
 	}
 
-	public boolean cancel(String filePath)
+	public boolean cancel(final @NonNull FileUploadRequest fileUploadRequest)
+	{
+		return cancel(fileUploadRequest.getKey());
+	}
+
+	public boolean cancel(final String key)
 	{
 		try
 		{
-			String key = getKey(filePath);
 			if (mUploaderMap.containsKey(key))
 			{
 				Uploader uploader = mUploaderMap.get(key);
@@ -207,6 +224,11 @@ public class FileUploadManager
 		return true;
 	}
 
+	public boolean isAllDone()
+	{
+		return mUploaderMap.isEmpty();
+	}
+
 	private boolean check(String key) throws Exception
 	{
 		if (mUploaderMap.containsKey(key))
@@ -228,15 +250,6 @@ public class FileUploadManager
 		return true;
 	}
 
-	private static String getKey(String filePath) throws Exception
-	{
-		if (TextUtils.isEmpty(filePath))
-		{
-			throw new NullPointerException("File or File path can't be null! [filePath: " + filePath + "]");
-		}
-		return KeyGenerator.generate(filePath);
-	}
-
 	private Uploader.OnDestroyedListener mFileUploaderDestroyedListener = new Uploader.OnDestroyedListener()
 	{
 		@Override
@@ -249,10 +262,30 @@ public class FileUploadManager
 				{
 					if (mUploaderMap.containsKey(key))
 					{
-						mUploaderMap.remove(key);
+						removeUploadTask(key);
 					}
 				}
 			});
 		}
 	};
+
+	private void removeUploadTask(String key)
+	{
+		try
+		{
+			mUploaderMap.remove(key);
+		}
+		catch (Exception e)
+		{
+
+		}
+
+		if (mAllTaskCompletedListener != null && isAllDone())
+		{
+			synchronized (mAllTaskCompletedListener)
+			{
+				mAllTaskCompletedListener.onAllTaskCompleted();
+			}
+		}
+	}
 }

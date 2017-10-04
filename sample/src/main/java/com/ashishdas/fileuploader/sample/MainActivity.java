@@ -29,9 +29,9 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.ashishdas.fileuploader.FileUploader;
-import com.ashishdas.fileuploader.FileUploaderException;
-import com.ashishdas.fileuploader.FileUploaderListener;
+import com.ashishdas.fileuploader.FileUploadException;
+import com.ashishdas.fileuploader.FileUploadManager;
+import com.ashishdas.fileuploader.FileUploadStatusListener;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 		tvServerUrl.setText("https://androidexample.com/media/UploadToServer.php");
 		mLastServerUrl = tvServerUrl.getText().toString();
-		FileUploader.startup(mContext, mLastServerUrl, null);
+		FileUploadManager.startup(mContext, mLastServerUrl, null);
 
 		setUploadEnabled(false);
 	}
@@ -117,13 +117,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 				{
 					if (!mLastServerUrl.equals(serverUrl))
 					{
-						FileUploader.shutdown();
+						FileUploadManager.shutdown();
 						mLastServerUrl = serverUrl;
-						FileUploader.startup(mContext, serverUrl, null);
+						FileUploadManager.startup(mContext, serverUrl, null);
 
 					}
 					btnUpload.setEnabled(false);
-					FileUploader.upload(mImageFilePath, mFileUploaderListener);
+					FileUploadManager.upload(mImageFilePath, mFileUploadStatusListener);
 				}
 				break;
 		}
@@ -264,7 +264,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		return realPath;
 	}
 
-	private FileUploaderListener mFileUploaderListener = new FileUploaderListener()
+	private FileUploadStatusListener mFileUploadStatusListener = new FileUploadStatusListener()
 	{
 		@Override
 		public void onStarted()
@@ -313,7 +313,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		}
 
 		@Override
-		public void onFailed(final FileUploaderException e)
+		public void onFailed(final FileUploadException e)
 		{
 			btnUpload.setEnabled(true);
 			Log.e(TAG, "onFailed() : " + e.getLocalizedMessage(), e);

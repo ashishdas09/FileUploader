@@ -7,33 +7,88 @@
 
 package com.ashishdas.fileuploader.internal;
 
-import com.ashishdas.fileuploader.FileUploaderException;
-import com.ashishdas.fileuploader.FileUploaderListener;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.text.TextUtils;
 
-public class UploadInfo
+import com.ashishdas.fileuploader.FileUploadException;
+import com.ashishdas.fileuploader.FileUploadStatus;
+
+public class UploadInfo implements Parcelable
 {
-	private long mTime;
-	private int mPercent;
-	private long mLength;
-	private long mFinished;
-	private boolean mAcceptRanges;
+	private FileUploadStatus mStatus;
+
+	private int mPercent; // the percent of progress (finished/total)*100
+	private long mLength; // the total length of the file same value with method
+	private long mFinished; // the downloaded length of the file
+
 	private String mServerResponse;
-	private FileUploaderException mFileUploaderException;
-	private UploadStatus mUploadStatus;
-	private FileUploaderListener mFileUploaderListener;
+
+	private int mErrorCode;
+	private String mErrorMessage;
 
 	public UploadInfo()
 	{
 	}
 
-	public long getTime()
+	protected UploadInfo(Parcel in)
 	{
-		return mTime;
+		mStatus = FileUploadStatus.getStatus(in.readInt());
+
+		mPercent = in.readInt();
+		mLength = in.readLong();
+		mFinished = in.readLong();
+
+		mServerResponse = in.readString();
+
+		mErrorCode = in.readInt();
+		mErrorMessage = in.readString();
 	}
 
-	public void setTime(final long time)
+	@Override
+	public void writeToParcel(Parcel dest, int flags)
 	{
-		mTime = time;
+		dest.writeInt(mStatus != null ? mStatus.toInt() : 0);
+
+		dest.writeInt(mPercent);
+		dest.writeLong(mLength);
+		dest.writeLong(mFinished);
+
+		dest.writeString(mServerResponse);
+
+		dest.writeInt(mErrorCode);
+		dest.writeString(mErrorMessage);
+	}
+
+	@Override
+	public int describeContents()
+	{
+		return 0;
+	}
+
+	public static final Creator<UploadInfo> CREATOR = new Creator<UploadInfo>()
+	{
+		@Override
+		public UploadInfo createFromParcel(Parcel in)
+		{
+			return new UploadInfo(in);
+		}
+
+		@Override
+		public UploadInfo[] newArray(int size)
+		{
+			return new UploadInfo[size];
+		}
+	};
+
+	public FileUploadStatus getStatus()
+	{
+		return mStatus;
+	}
+
+	public void setFileUploadStatus(final FileUploadStatus status)
+	{
+		mStatus = status;
 	}
 
 	public int getPercent()
@@ -66,16 +121,6 @@ public class UploadInfo
 		mFinished = finished;
 	}
 
-	public boolean isAcceptRanges()
-	{
-		return mAcceptRanges;
-	}
-
-	public void setAcceptRanges(final boolean acceptRanges)
-	{
-		mAcceptRanges = acceptRanges;
-	}
-
 	public String getServerResponse()
 	{
 		return mServerResponse;
@@ -86,49 +131,35 @@ public class UploadInfo
 		mServerResponse = serverResponse;
 	}
 
-	public FileUploaderException getFileUploaderException()
+	public void setErrorMessage(final String errorMessage)
 	{
-		return mFileUploaderException;
+		mErrorMessage = errorMessage;
 	}
 
-	public void setFileUploaderException(final FileUploaderException fileUploaderException)
+	public void setErrorCode(final int errorCode)
 	{
-		mFileUploaderException = fileUploaderException;
+		mErrorCode = errorCode;
 	}
 
-	public UploadStatus getUploadStatus()
+	public FileUploadException getFileUploadException()
 	{
-		return mUploadStatus;
-	}
-
-	public void setUploadStatus(final UploadStatus uploadStatus)
-	{
-		mUploadStatus = uploadStatus;
-	}
-
-	public FileUploaderListener getFileUploaderListener()
-	{
-		return mFileUploaderListener;
-	}
-
-	public void setFileUploaderListener(final FileUploaderListener fileUploaderListener)
-	{
-		mFileUploaderListener = fileUploaderListener;
+		if (TextUtils.isEmpty(mErrorMessage))
+		{
+			return null;
+		}
+		return new FileUploadException(mErrorCode, mErrorMessage);
 	}
 
 	@Override
 	public String toString()
 	{
 		return "UploadInfo{" +
-				"mTime=" + mTime +
+				"mStatus=" + mStatus +
 				", mPercent=" + mPercent +
 				", mLength=" + mLength +
 				", mFinished=" + mFinished +
-				", mAcceptRanges=" + mAcceptRanges +
-				", mServerResponse='" + mServerResponse +
-				", mFileUploaderException=" + mFileUploaderException +
-				", mUploadStatus=" + mUploadStatus +
-				", mFileUploaderListener=" + mFileUploaderListener +
+				", mServerResponse='" + mServerResponse + '\'' +
+				", mException=" + getFileUploadException() +
 				'}';
 	}
 }

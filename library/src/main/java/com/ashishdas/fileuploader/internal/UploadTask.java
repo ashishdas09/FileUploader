@@ -11,7 +11,8 @@ import android.os.Process;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.ashishdas.fileuploader.FileUploaderException;
+import com.ashishdas.fileuploader.FileUploadException;
+import com.ashishdas.fileuploader.FileUploadStatus;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -41,7 +42,7 @@ public class UploadTask implements Runnable
 
 		void onCanceled();
 
-		void onFailed(FileUploaderException ue);
+		void onFailed(FileUploadException ue);
 	}
 
 	private static final String TAG = UploadTask.class.getSimpleName();
@@ -69,9 +70,9 @@ public class UploadTask implements Runnable
 
 	private final OnUploadListener mOnUploadListener;
 
-	private volatile UploadStatus mStatus;
+	private volatile FileUploadStatus mStatus;
 
-	private volatile UploadStatus mCommend;
+	private volatile FileUploadStatus mCommend;
 
 	private String mResponse = null;
 
@@ -84,37 +85,37 @@ public class UploadTask implements Runnable
 
 	public void cancel()
 	{
-		mCommend = UploadStatus.Canceled;
+		mCommend = FileUploadStatus.Canceled;
 	}
 
 	public void pause()
 	{
-		mCommend = UploadStatus.Paused;
+		mCommend = FileUploadStatus.Paused;
 	}
 
 	public boolean isDownloading()
 	{
-		return mStatus == UploadStatus.Uploading;
+		return mStatus == FileUploadStatus.Uploading;
 	}
 
 	public boolean isComplete()
 	{
-		return mStatus == UploadStatus.Completed;
+		return mStatus == FileUploadStatus.Completed;
 	}
 
 	public boolean isPaused()
 	{
-		return mStatus == UploadStatus.Paused;
+		return mStatus == FileUploadStatus.Paused;
 	}
 
 	public boolean isCanceled()
 	{
-		return mStatus == UploadStatus.Canceled;
+		return mStatus == FileUploadStatus.Canceled;
 	}
 
 	public boolean isFailed()
 	{
-		return mStatus == UploadStatus.Failed;
+		return mStatus == FileUploadStatus.Failed;
 	}
 
 	@Override
@@ -123,50 +124,50 @@ public class UploadTask implements Runnable
 		Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
 		try
 		{
-			mStatus = UploadStatus.Connecting;
+			mStatus = FileUploadStatus.Connecting;
 			mOnUploadListener.onConnecting();
 			executeUpload();
 			synchronized (mOnUploadListener)
 			{
-				mStatus = UploadStatus.Completed;
+				mStatus = FileUploadStatus.Completed;
 				mOnUploadListener.onCompleted(mResponse);
 			}
 		}
-		catch (FileUploaderException e)
+		catch (FileUploadException e)
 		{
 			handleUploadException(e);
 		}
 	}
 
-	private void handleUploadException(FileUploaderException exception)
+	private void handleUploadException(FileUploadException exception)
 	{
 		if (exception != null)
 		{
 			int errorCode = exception.getErrorCode();
 
-			if (errorCode == UploadStatus.Failed.toInt())
+			if (errorCode == FileUploadStatus.Failed.toInt())
 			{
 				synchronized (mOnUploadListener)
 				{
-					mStatus = UploadStatus.Failed;
+					mStatus = FileUploadStatus.Failed;
 					mOnUploadListener.onFailed(exception);
 				}
 				return;
 			}
-			else if (errorCode == UploadStatus.Paused.toInt())
+			else if (errorCode == FileUploadStatus.Paused.toInt())
 			{
 				synchronized (mOnUploadListener)
 				{
-					mStatus = UploadStatus.Paused;
+					mStatus = FileUploadStatus.Paused;
 					mOnUploadListener.onPaused();
 				}
 				return;
 			}
-			else if (errorCode == UploadStatus.Canceled.toInt())
+			else if (errorCode == FileUploadStatus.Canceled.toInt())
 			{
 				synchronized (mOnUploadListener)
 				{
-					mStatus = UploadStatus.Canceled;
+					mStatus = FileUploadStatus.Canceled;
 					mOnUploadListener.onCanceled();
 				}
 				return;
@@ -176,7 +177,7 @@ public class UploadTask implements Runnable
 		throw new IllegalArgumentException("Unknown state");
 	}
 
-	private void executeUpload() throws FileUploaderException
+	private void executeUpload() throws FileUploadException
 	{
 		HttpURLConnection httpConnection = null;
 		try
@@ -213,7 +214,7 @@ public class UploadTask implements Runnable
 
 			synchronized (mOnUploadListener)
 			{
-				mStatus = UploadStatus.Connected;
+				mStatus = FileUploadStatus.Connected;
 				mOnUploadListener.onConnected();
 			}
 
@@ -225,11 +226,11 @@ public class UploadTask implements Runnable
 		}
 		catch (ProtocolException e)
 		{
-			throw new FileUploaderException(UploadStatus.Failed.toInt(), "Protocol error", e);
+			throw new FileUploadException(FileUploadStatus.Failed.toInt(), "Protocol error", e);
 		}
 		catch (IOException e)
 		{
-			throw new FileUploaderException(UploadStatus.Failed.toInt(), "IO error", e);
+			throw new FileUploadException(FileUploadStatus.Failed.toInt(), "IO error", e);
 		}
 		finally
 		{
@@ -243,9 +244,9 @@ public class UploadTask implements Runnable
 	/**
 	 * Write data file into header and data output stream.
 	 */
-	private void requestBody(HttpURLConnection httpConnection, String fileHeader, File file, String tail) throws FileUploaderException
+	private void requestBody(HttpURLConnection httpConnection, String fileHeader, File file, String tail) throws FileUploadException
 	{
-		FileUploaderException exception = null;
+		FileUploadException exception = null;
 		DataOutputStream request = null;
 		try
 		{
@@ -262,7 +263,7 @@ public class UploadTask implements Runnable
 		}
 		catch (Exception e)
 		{
-			exception = new FileUploaderException(UploadStatus.Failed.toInt(), "File error", e);
+			exception = new FileUploadException(FileUploadStatus.Failed.toInt(), "File error", e);
 		}
 
 		if (request != null)
@@ -286,7 +287,7 @@ public class UploadTask implements Runnable
 	/**
 	 * Write data file into data output stream.
 	 */
-	private void buildData(DataOutputStream dataOutputStream, File file) throws FileUploaderException
+	private void buildData(DataOutputStream dataOutputStream, File file) throws FileUploadException
 	{
 		try
 		{
@@ -295,7 +296,7 @@ public class UploadTask implements Runnable
 
 			synchronized (mOnUploadListener)
 			{
-				mStatus = UploadStatus.Uploading;
+				mStatus = FileUploadStatus.Uploading;
 				mOnUploadListener.onProgress(mUploadRequest.getProgress(), 0);
 			}
 
@@ -328,17 +329,17 @@ public class UploadTask implements Runnable
 				}
 				catch (IOException e)
 				{
-					throw new FileUploaderException(UploadStatus.Failed.toInt(), e);
+					throw new FileUploadException(FileUploadStatus.Failed.toInt(), e);
 				}
 			}
 		}
 		catch (Exception e)
 		{
-			throw new FileUploaderException(UploadStatus.Failed.toInt(), e);
+			throw new FileUploadException(FileUploadStatus.Failed.toInt(), e);
 		}
 	}
 
-	private void captureResponse(HttpURLConnection httpConnection) throws FileUploaderException
+	private void captureResponse(HttpURLConnection httpConnection) throws FileUploadException
 	{
 		mResponse = "";
 		InputStream inputStream = null;
@@ -351,7 +352,7 @@ public class UploadTask implements Runnable
 			}
 			catch (IOException e)
 			{
-				throw new FileUploaderException(UploadStatus.Failed.toInt(), "http get inputStream error", e);
+				throw new FileUploadException(FileUploadStatus.Failed.toInt(), "http get inputStream error", e);
 			}
 
 			responseStreamReader = new BufferedReader(new InputStreamReader(inputStream));
@@ -374,7 +375,7 @@ public class UploadTask implements Runnable
 			}
 			catch (Exception e)
 			{
-				throw new FileUploaderException(UploadStatus.Failed.toInt(), "Invalid Server Response");
+				throw new FileUploadException(FileUploadStatus.Failed.toInt(), "Invalid Server Response");
 			}
 		}
 		finally
@@ -402,17 +403,17 @@ public class UploadTask implements Runnable
 		}
 	}
 
-	private void checkPausedOrCanceled() throws FileUploaderException
+	private void checkPausedOrCanceled() throws FileUploadException
 	{
-		if (mCommend == UploadStatus.Canceled)
+		if (mCommend == FileUploadStatus.Canceled)
 		{
 			// cancel
-			throw new FileUploaderException(UploadStatus.Canceled.toInt(), "Upload canceled!");
+			throw new FileUploadException(FileUploadStatus.Canceled.toInt(), "Upload canceled!");
 		}
-		else if (mCommend == UploadStatus.Paused)
+		else if (mCommend == FileUploadStatus.Paused)
 		{
 			// pause
-			throw new FileUploaderException(UploadStatus.Paused.toInt(), "Upload paused!");
+			throw new FileUploadException(FileUploadStatus.Paused.toInt(), "Upload paused!");
 		}
 	}
 }

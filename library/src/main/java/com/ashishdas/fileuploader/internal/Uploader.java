@@ -7,7 +7,8 @@
 
 package com.ashishdas.fileuploader.internal;
 
-import com.ashishdas.fileuploader.FileUploaderException;
+import com.ashishdas.fileuploader.FileUploadException;
+import com.ashishdas.fileuploader.FileUploadStatus;
 
 import java.io.File;
 import java.util.concurrent.Executor;
@@ -25,7 +26,7 @@ public class Uploader
 	private Executor mExecutor;
 	private OnDestroyedListener mListener;
 
-	private UploadStatus mStatus;
+	private FileUploadStatus mStatus;
 	private UploadRequest mUploadRequest;
 
 	private UploadTask mUploadTask;
@@ -43,15 +44,15 @@ public class Uploader
 
 	public boolean isRunning()
 	{
-		return mStatus == UploadStatus.Started
-				|| mStatus == UploadStatus.Connecting
-				|| mStatus == UploadStatus.Connected
-				|| mStatus == UploadStatus.Uploading;
+		return mStatus == FileUploadStatus.Started
+				|| mStatus == FileUploadStatus.Connecting
+				|| mStatus == FileUploadStatus.Connected
+				|| mStatus == FileUploadStatus.Uploading;
 	}
 
 	public void start()
 	{
-		mStatus = UploadStatus.Started;
+		mStatus = FileUploadStatus.Started;
 		mResponse.onStarted(mUploadRequest.getLength());
 		upload();
 	}
@@ -62,7 +63,7 @@ public class Uploader
 		{
 			mUploadTask.pause();
 		}
-		if (mStatus != UploadStatus.Uploading)
+		if (mStatus != FileUploadStatus.Uploading)
 		{
 			mUploadListener.onPaused();
 		}
@@ -74,7 +75,7 @@ public class Uploader
 		{
 			mUploadTask.cancel();
 		}
-		if (mStatus != UploadStatus.Uploading)
+		if (mStatus != FileUploadStatus.Uploading)
 		{
 			mUploadListener.onCanceled();
 		}
@@ -88,7 +89,7 @@ public class Uploader
 
 	private void upload()
 	{
-		mStatus = UploadStatus.Uploading;
+		mStatus = FileUploadStatus.Uploading;
 
 		mUploadTask = new UploadTask(mUploadRequest, mUploadListener);
 		mExecutor.execute(mUploadTask);
@@ -119,7 +120,7 @@ public class Uploader
 		{
 			if (isComplete())
 			{
-				mStatus = UploadStatus.Completed;
+				mStatus = FileUploadStatus.Completed;
 				mResponse.onUploadCompleted(serverResponse);
 				onDestroy();
 			}
@@ -130,7 +131,7 @@ public class Uploader
 		{
 			if (!isDownloading())
 			{
-				mStatus = UploadStatus.Paused;
+				mStatus = FileUploadStatus.Paused;
 				mResponse.onUploadPaused();
 				onDestroy();
 			}
@@ -141,18 +142,18 @@ public class Uploader
 		{
 			if (!isDownloading())
 			{
-				mStatus = UploadStatus.Canceled;
+				mStatus = FileUploadStatus.Canceled;
 				mResponse.onUploadCanceled();
 				onDestroy();
 			}
 		}
 
 		@Override
-		public void onFailed(FileUploaderException ue)
+		public void onFailed(FileUploadException ue)
 		{
 			if (!isDownloading())
 			{
-				mStatus = UploadStatus.Failed;
+				mStatus = FileUploadStatus.Failed;
 				mResponse.onUploadFailed(ue);
 				onDestroy();
 			}

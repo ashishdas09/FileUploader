@@ -1,13 +1,13 @@
 /*******************************************************************************
- * UploadStatus.java
- * UploadStatus
+ * FileUploadStatus.java
+ * FileUploadStatus
  * <p>
  * Author(s): Ashish Das
  ******************************************************************************/
 
-package com.ashishdas.fileuploader.internal;
+package com.ashishdas.fileuploader;
 
-public enum UploadStatus
+public enum FileUploadStatus
 {
 	Started(91),
 	Connecting(92),
@@ -20,7 +20,7 @@ public enum UploadStatus
 
 	private int mStatusCode;
 
-	UploadStatus(int code)
+	FileUploadStatus(int code)
 	{
 		mStatusCode = code;
 	}
@@ -52,44 +52,44 @@ public enum UploadStatus
 			case Failed:
 				return "Failed";
 		}
-		return "UploadStatus{" +
+		return "FileUploadStatus{" +
 				"mStatusCode=" + mStatusCode +
 				'}';
 	}
 
-	public static UploadStatus getStatus(int code)
+	public static FileUploadStatus getStatus(int code)
 	{
-		if (code == UploadStatus.Started.toInt())
+		if (code == FileUploadStatus.Started.toInt())
 		{
-			return UploadStatus.Started;
+			return FileUploadStatus.Started;
 		}
-		else if (code == UploadStatus.Connecting.toInt())
+		else if (code == FileUploadStatus.Connecting.toInt())
 		{
-			return UploadStatus.Connecting;
+			return FileUploadStatus.Connecting;
 		}
-		else if (code == UploadStatus.Connected.toInt())
+		else if (code == FileUploadStatus.Connected.toInt())
 		{
-			return UploadStatus.Connected;
+			return FileUploadStatus.Connected;
 		}
-		else if (code == UploadStatus.Uploading.toInt())
+		else if (code == FileUploadStatus.Uploading.toInt())
 		{
-			return UploadStatus.Uploading;
+			return FileUploadStatus.Uploading;
 		}
-		else if (code == UploadStatus.Completed.toInt())
+		else if (code == FileUploadStatus.Completed.toInt())
 		{
-			return UploadStatus.Completed;
+			return FileUploadStatus.Completed;
 		}
-		else if (code == UploadStatus.Paused.toInt())
+		else if (code == FileUploadStatus.Paused.toInt())
 		{
-			return UploadStatus.Paused;
+			return FileUploadStatus.Paused;
 		}
-		else if (code == UploadStatus.Canceled.toInt())
+		else if (code == FileUploadStatus.Canceled.toInt())
 		{
-			return UploadStatus.Canceled;
+			return FileUploadStatus.Canceled;
 		}
-		else if (code == UploadStatus.Failed.toInt())
+		else if (code == FileUploadStatus.Failed.toInt())
 		{
-			return UploadStatus.Failed;
+			return FileUploadStatus.Failed;
 		}
 
 		return null;

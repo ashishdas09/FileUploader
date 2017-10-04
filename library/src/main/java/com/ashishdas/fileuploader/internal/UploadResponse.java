@@ -7,74 +7,95 @@
 
 package com.ashishdas.fileuploader.internal;
 
-import com.ashishdas.fileuploader.FileUploaderException;
-import com.ashishdas.fileuploader.FileUploaderListener;
+import com.ashishdas.fileuploader.FileUploadException;
+import com.ashishdas.fileuploader.FileUploadRequest;
+import com.ashishdas.fileuploader.FileUploadStatusListener;
+import com.ashishdas.fileuploader.FileUploadStatus;
+
+import java.lang.ref.WeakReference;
 
 public class UploadResponse
 {
+	private UploadInfo mUploadInfo;
 	private UploadInfoDelivery mDelivery;
 
-	private UploadInfo mUploadInfo;
+	private final FileUploadRequest mFileUploadRequest;
+	private WeakReference<FileUploadStatusListener> mFileUploadStatusListener;
 
-	public UploadResponse(UploadInfoDelivery delivery, FileUploaderListener fileUploaderListener)
+	public UploadResponse(FileUploadRequest fileUploadRequest, UploadInfoDelivery delivery, FileUploadStatusListener fileUploadStatusListener)
 	{
 		mDelivery = delivery;
 		mUploadInfo = new UploadInfo();
-		mUploadInfo.setFileUploaderListener(fileUploaderListener);
+		mFileUploadRequest = fileUploadRequest;
+		mFileUploadStatusListener = new WeakReference<>(fileUploadStatusListener);
 	}
 
 	public void onStarted(long length)
 	{
 		mUploadInfo.setLength(length);
-		mUploadInfo.setUploadStatus(UploadStatus.Started);
-		mUploadInfo.getFileUploaderListener().onStarted();
+		mUploadInfo.setFileUploadStatus(FileUploadStatus.Started);
+		notifyStatus();
 	}
 
 	public void onConnecting()
 	{
-		mUploadInfo.setUploadStatus(UploadStatus.Connecting);
-		mDelivery.post(mUploadInfo);
+		mUploadInfo.setFileUploadStatus(FileUploadStatus.Connecting);
+		notifyStatus();
 	}
 
 	public void onConnected()
 	{
-		mUploadInfo.setUploadStatus(UploadStatus.Connected);
-		mDelivery.post(mUploadInfo);
+		mUploadInfo.setFileUploadStatus(FileUploadStatus.Connected);
+		notifyStatus();
 	}
 
 	public void onUploadProgress(long finished, int percent)
 	{
-		mUploadInfo.setFinished(finished);
 		mUploadInfo.setPercent(percent);
-		mUploadInfo.setUploadStatus(UploadStatus.Uploading);
-		mDelivery.post(mUploadInfo);
+		mUploadInfo.setFinished(finished);
+		mUploadInfo.setFileUploadStatus(FileUploadStatus.Uploading);
+		postDelivery();
 	}
 
 	public void onUploadCompleted(String serverResponse)
 	{
-		mUploadInfo.setFinished(mUploadInfo.getLength());
 		mUploadInfo.setPercent(100);
-		mUploadInfo.setUploadStatus(UploadStatus.Completed);
+		mUploadInfo.setFinished(mUploadInfo.getLength());
 		mUploadInfo.setServerResponse(serverResponse);
-		mDelivery.post(mUploadInfo);
+		mUploadInfo.setFileUploadStatus(FileUploadStatus.Completed);
+		postDelivery();
 	}
 
 	public void onUploadPaused()
 	{
-		mUploadInfo.setUploadStatus(UploadStatus.Paused);
-		mDelivery.post(mUploadInfo);
+		mUploadInfo.setFileUploadStatus(FileUploadStatus.Paused);
+		postDelivery();
 	}
 
 	public void onUploadCanceled()
 	{
-		mUploadInfo.setUploadStatus(UploadStatus.Canceled);
-		mDelivery.post(mUploadInfo);
+		mUploadInfo.setFileUploadStatus(FileUploadStatus.Canceled);
+		postDelivery();
 	}
 
-	public void onUploadFailed(FileUploaderException e)
+	public void onUploadFailed(FileUploadException e)
 	{
-		mUploadInfo.setFileUploaderException(e);
-		mUploadInfo.setUploadStatus(UploadStatus.Failed);
-		mDelivery.post(mUploadInfo);
+		if (e != null)
+		{
+			mUploadInfo.setErrorCode(e.getErrorCode());
+			mUploadInfo.setErrorMessage(e.getLocalizedMessage());
+		}
+		mUploadInfo.setFileUploadStatus(FileUploadStatus.Failed);
+		postDelivery();
+	}
+
+	private void notifyStatus()
+	{
+		UploadInfoDelivery.notifyStatus(mFileUploadRequest, mUploadInfo, mFileUploadStatusListener);
+	}
+
+	private void postDelivery()
+	{
+		mDelivery.post(mFileUploadRequest, mUploadInfo, mFileUploadStatusListener);
 	}
 }
