@@ -11,7 +11,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
 
-import com.ashishdas.fileuploader.internal.KeyGenerator;
+import com.ashishdas.fileuploader.internal.utils.KeyGenerator;
 
 import java.io.File;
 

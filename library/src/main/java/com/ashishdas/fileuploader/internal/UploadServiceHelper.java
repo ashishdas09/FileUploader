@@ -27,21 +27,22 @@ public class UploadServiceHelper
 	private static final String TAG = "UploadServiceHelper";
 
 	public static final int JOBID_UPLOAD = 901;
-	public static final int JOBID_PAUSE = 902;
-	public static final int JOBID_CANCEL = 903;
-	public static final int JOBID_PAUSE_ALL = 904;
-	public static final int JOBID_CANCEL_ALL = 905;
-	public static final int JOBID_RESUME_ALL = 906;
-	public static final int JOBID_DESTORY = 907;
+	private static final int JOBID_PAUSE = 902;
+	private static final int JOBID_CANCEL = 903;
+	private static final int JOBID_PAUSE_ALL = 904;
+	private static final int JOBID_CANCEL_ALL = 905;
+	private static final int JOBID_RESUME_ALL = 906;
+	private static final int JOBID_DESTORY = 907;
 
 	public static final String ACTION_UPLOAD_BROAD_CAST = "com.ashishdas.fileuploader.ACTION_BROAD_CAST";
-	public static final String ACTION_UPLOAD = "com.ashishdas.fileuploader.ACTION_UPLOAD";
-	public static final String ACTION_PAUSE = "com.ashishdas.fileuploader.ACTION_PAUSE";
-	public static final String ACTION_CANCEL = "com.ashishdas.fileuploader.ACTION_CANCEL";
-	public static final String ACTION_PAUSE_ALL = "com.ashishdas.fileuploader.ACTION_PAUSE_ALL";
-	public static final String ACTION_CANCEL_ALL = "com.ashishdas.fileuploader.ACTION_CANCEL_ALL";
-	public static final String ACTION_RESUME_ALL = "com.ashishdas.fileuploader.ACTION_RESUME_ALL";
+	private static final String ACTION_UPLOAD = "com.ashishdas.fileuploader.ACTION_UPLOAD";
+	private static final String ACTION_PAUSE = "com.ashishdas.fileuploader.ACTION_PAUSE";
+	private static final String ACTION_CANCEL = "com.ashishdas.fileuploader.ACTION_CANCEL";
+	private static final String ACTION_PAUSE_ALL = "com.ashishdas.fileuploader.ACTION_PAUSE_ALL";
+	private static final String ACTION_CANCEL_ALL = "com.ashishdas.fileuploader.ACTION_CANCEL_ALL";
+	private static final String ACTION_RESUME_ALL = "com.ashishdas.fileuploader.ACTION_RESUME_ALL";
 
+	public static final String EXTRA_FILE_UPLOAD_REQUEST = "extra_file_upload_request";
 	public static final String EXTRA_FILE_UPLOAD_INFO = "extra_file_upload_info";
 
 	public static synchronized void intentUpload(Context context, FileUploadRequest request)
@@ -112,17 +113,17 @@ public class UploadServiceHelper
 			String action = intent.getAction();
 			try
 			{
-				FileUploadRequest uploadInfo = intent.getParcelableExtra(UploadServiceHelper.EXTRA_FILE_UPLOAD_INFO);
+				FileUploadRequest request = intent.getParcelableExtra(UploadServiceHelper.EXTRA_FILE_UPLOAD_INFO);
 				switch (action)
 				{
 					case UploadServiceHelper.ACTION_UPLOAD:
-						FileUploadManager.upload(uploadInfo, null);
+						FileUploadManager.upload(request, null);
 						break;
 					case UploadServiceHelper.ACTION_PAUSE:
-						FileUploadManager.pause(uploadInfo);
+						FileUploadManager.pause(request);
 						break;
 					case UploadServiceHelper.ACTION_CANCEL:
-						FileUploadManager.cancel(uploadInfo);
+						FileUploadManager.cancel(request);
 						break;
 					case UploadServiceHelper.ACTION_PAUSE_ALL:
 						FileUploadManager.pauseAll();
@@ -159,6 +160,15 @@ public class UploadServiceHelper
 		{
 			FileUploadManager.pauseAll();
 		}
+	}
+
+	public static synchronized void sendBroadCast(final Context context, final FileUploadRequest request, final UploadInfo uploadInfo)
+	{
+		Intent intent = new Intent();
+		intent.setAction(ACTION_UPLOAD_BROAD_CAST);
+		intent.putExtra(EXTRA_FILE_UPLOAD_REQUEST, request);
+		intent.putExtra(EXTRA_FILE_UPLOAD_INFO, uploadInfo);
+		context.sendBroadcast(intent);
 	}
 
 	private static synchronized boolean isLollipopAndAbove()

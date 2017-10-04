@@ -9,14 +9,14 @@ package com.ashishdas.fileuploader;
 
 public enum FileUploadStatus
 {
-	Started(91),
-	Connecting(92),
-	Connected(93),
-	Uploading(94),
-	Completed(95),
-	Paused(96),
-	Canceled(97),
-	Failed(98);
+	Started(1),
+	Connecting(2),
+	Connected(3),
+	Uploading(4),
+	Paused(5),
+	Completed(6),
+	Canceled(7),
+	Failed(8);
 
 	private int mStatusCode;
 

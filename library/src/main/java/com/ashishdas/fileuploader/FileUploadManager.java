@@ -8,13 +8,19 @@
 package com.ashishdas.fileuploader;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.ashishdas.fileuploader.internal.Globals;
+import com.ashishdas.fileuploader.internal.FileUploadStatusObserver;
+import com.ashishdas.fileuploader.internal.UploadInfo;
 import com.ashishdas.fileuploader.internal.UploadManager;
+import com.ashishdas.fileuploader.internal.UploadStatusListener;
+import com.ashishdas.fileuploader.internal.utils.Utils;
 
 import java.net.URL;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class FileUploadManager
@@ -29,19 +35,23 @@ public class FileUploadManager
 	private static Context mContext;
 	private static UploadManager sUploadManager;
 
+	private static Map<String, FileUploadStatusObserver> sFileUploadStatusObserverMap = new LinkedHashMap<>();
+	private static Handler sHandler = new Handler(Looper.getMainLooper());
+
 	public synchronized static boolean startup(@NonNull final Context context, @NonNull final String url, @NonNull final Map<String, String> headers)
 	{
 		if (!isStarted())
 		{
 			try
 			{
-				if (Globals.isNetworkUrl(url))
+				if (Utils.isNetworkUrl(url))
 				{
-					Globals.sURL = new URL(url);
-					Globals.sHeaders = headers;
+					Utils.sURL = new URL(url);
+					Utils.sHeaders = headers;
 					mContext = context.getApplicationContext();
 					sUploadManager = new UploadManager(mContext);
-
+					sFileUploadStatusObserverMap.clear();
+					sHandler = new Handler(Looper.getMainLooper());
 					return true;
 				}
 			}
@@ -72,18 +82,37 @@ public class FileUploadManager
 		return isStarted() ? mContext : null;
 	}
 
-	public synchronized static void upload(final FileUploadRequest fileUploadRequest, final FileUploadStatusListener fileUploadStatusListener)
+	public static synchronized void upload(final @NonNull FileUploadRequest fileUploadRequest, final FileUploadStatusListener fileUploadStatusListener)
 	{
 		try
 		{
-			getInstance().upload(fileUploadRequest, fileUploadStatusListener);
+			Utils.assertFileUploadInfo(fileUploadRequest);
+			final String key = fileUploadRequest.getKey();
+			if (fileUploadStatusListener != null)
+			{
+				FileUploadStatusObserver observer = getObserver(key);
+				if (observer == null)
+				{
+					observer = new FileUploadStatusObserver();
+				}
+				else
+				{
+					sFileUploadStatusObserverMap.remove(key);
+				}
+				observer.addCallback(fileUploadStatusListener);
+				sFileUploadStatusObserverMap.put(key, observer);
+			}
+			if (!isRunning(fileUploadRequest))
+			{
+				getInstance().upload(fileUploadRequest, sUploadStatusListener);
+			}
 		}
-		catch (FileUploadException e)
+		catch (Exception e)
 		{
 			Log.e(TAG, "upload()", e);
 			if (fileUploadStatusListener != null)
 			{
-				fileUploadStatusListener.onFailed(fileUploadRequest, e);
+				fileUploadStatusListener.onFailed(fileUploadRequest, new FileUploadException(e.getLocalizedMessage()));
 			}
 		}
 	}
@@ -237,5 +266,78 @@ public class FileUploadManager
 			throw new FileUploadException("FileUploadManager has not been initialized.");
 		}
 		return sUploadManager;
+	}
+
+	private static UploadStatusListener sUploadStatusListener = new UploadStatusListener()
+	{
+		@Override
+		public void onUploadStatus(final FileUploadRequest request, final UploadInfo uploadInfo)
+		{
+			notifyUploadStatus(request, uploadInfo);
+		}
+	};
+
+	private synchronized static void notifyUploadStatus(final FileUploadRequest request, final UploadInfo uploadInfo)
+	{
+		try
+		{
+			final String key = request.getKey();
+			final FileUploadStatusObserver observer = getObserver(key);
+			if (observer != null)
+			{
+				observer.notifyStatusListener(request, uploadInfo);
+			}
+			if (uploadInfo.getStatus().toInt() > FileUploadStatus.Paused.toInt())
+			{
+				removeObserver(key);
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	private synchronized static void removeObserver(final String key)
+	{
+		if (isEmptyObserverMap())
+		{
+			return;
+		}
+
+		sHandler.post(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				if (observerContainsKey(key))
+				{
+					sFileUploadStatusObserverMap.remove(key);
+				}
+			}
+		});
+	}
+
+	private synchronized static FileUploadStatusObserver getObserver(String key)
+	{
+		if (observerContainsKey(key))
+		{
+			return sFileUploadStatusObserverMap.get(key);
+		}
+		return null;
+	}
+
+	private synchronized static boolean observerContainsKey(String key)
+	{
+		if (isEmptyObserverMap())
+		{
+			return false;
+		}
+		return sFileUploadStatusObserverMap.containsKey(key);
+	}
+
+	private synchronized static boolean isEmptyObserverMap()
+	{
+		return sFileUploadStatusObserverMap.isEmpty();
 	}
 }

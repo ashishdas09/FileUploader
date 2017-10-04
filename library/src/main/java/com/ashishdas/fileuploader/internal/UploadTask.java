@@ -13,6 +13,7 @@ import android.util.Log;
 
 import com.ashishdas.fileuploader.FileUploadException;
 import com.ashishdas.fileuploader.FileUploadStatus;
+import com.ashishdas.fileuploader.internal.utils.Utils;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -182,7 +183,7 @@ public class UploadTask implements Runnable
 		HttpURLConnection httpConnection = null;
 		try
 		{
-			httpConnection = (HttpURLConnection) Globals.sURL.openConnection();
+			httpConnection = (HttpURLConnection) Utils.sURL.openConnection();
 			httpConnection.setDoOutput(true);
 
 			// Setup the request:
@@ -191,7 +192,7 @@ public class UploadTask implements Runnable
 			httpConnection.setRequestProperty(HTTP_HEADER_CACHE_CONTROL, HTTP_HEADER_VAL_NO_CACHE);
 			httpConnection.setRequestProperty(HTTP_HEADER_CONTENT_TYPE, HTTP_HEADER_VAL_MULTIPART + BOUNDARY);
 
-			final Map<String, String> headers = Globals.sHeaders;
+			final Map<String, String> headers = Utils.sHeaders;
 			if (headers != null && !headers.isEmpty())
 			{
 				for (String key : headers.keySet())

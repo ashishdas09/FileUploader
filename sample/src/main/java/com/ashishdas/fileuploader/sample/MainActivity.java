@@ -28,10 +28,12 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.ashishdas.fileuploader.FileUploadException;
 import com.ashishdas.fileuploader.FileUploadManager;
 import com.ashishdas.fileuploader.FileUploadRequest;
+import com.ashishdas.fileuploader.FileUploadServiceManager;
 import com.ashishdas.fileuploader.FileUploadStatusListener;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
@@ -121,10 +123,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 						FileUploadManager.shutdown();
 						mLastServerUrl = serverUrl;
 						FileUploadManager.startup(mContext, serverUrl, null);
-
 					}
 					btnUpload.setEnabled(false);
-					FileUploadManager.upload(new FileUploadRequest(mImageFilePath), mFileUploadStatusListener);
+					FileUploadRequest request = new FileUploadRequest(mImageFilePath);
+					if (((ToggleButton) findViewById(R.id.tb_service_option)).isChecked())
+					{
+						FileUploadServiceManager.upload(request);
+						return;
+					}
+					FileUploadManager.upload(request, mFileUploadStatusListener);
 				}
 				break;
 		}
