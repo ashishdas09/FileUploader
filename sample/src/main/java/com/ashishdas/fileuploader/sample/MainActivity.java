@@ -31,6 +31,7 @@ import android.widget.Toast;
 
 import com.ashishdas.fileuploader.FileUploadException;
 import com.ashishdas.fileuploader.FileUploadManager;
+import com.ashishdas.fileuploader.FileUploadRequest;
 import com.ashishdas.fileuploader.FileUploadStatusListener;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
@@ -123,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 					}
 					btnUpload.setEnabled(false);
-					FileUploadManager.upload(mImageFilePath, mFileUploadStatusListener);
+					FileUploadManager.upload(new FileUploadRequest(mImageFilePath), mFileUploadStatusListener);
 				}
 				break;
 		}
@@ -267,33 +268,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 	private FileUploadStatusListener mFileUploadStatusListener = new FileUploadStatusListener()
 	{
 		@Override
-		public void onStarted()
+		public void onStarted(final FileUploadRequest request)
 		{
 			Log.d(TAG, "onStarted()");
 			pbUploadProgress.setProgress(0);
 		}
 
 		@Override
-		public void onConnecting()
+		public void onConnecting(final FileUploadRequest request)
 		{
 			Log.d(TAG, "onConnecting()");
 		}
 
 		@Override
-		public void onConnected()
+		public void onConnected(final FileUploadRequest request)
 		{
 			Log.d(TAG, "onConnected()");
 		}
 
 		@Override
-		public void onUploading(final long finished, final long total, final int progress)
+		public void onUploading(final FileUploadRequest request, final long finished, final long total, final int progress)
 		{
 			pbUploadProgress.setProgress(progress);
 			Log.d(TAG, "onUploading total: " + total + ", progress: " + progress);
 		}
 
 		@Override
-		public void onCompleted(final String serverResponse)
+		public void onCompleted(final FileUploadRequest request, final String serverResponse)
 		{
 			Log.d(TAG, "onCompleted()");
 			Toast.makeText(mContext, "ServerResponse : " + serverResponse, Toast.LENGTH_LONG).show();
@@ -301,19 +302,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		}
 
 		@Override
-		public void onPaused()
+		public void onPaused(final FileUploadRequest request)
 		{
 			Log.d(TAG, "onPaused()");
 		}
 
 		@Override
-		public void onCanceled()
+		public void onCanceled(final FileUploadRequest request)
 		{
 			Log.d(TAG, "onCanceled()");
 		}
 
 		@Override
-		public void onFailed(final FileUploadException e)
+		public void onFailed(final FileUploadRequest request, final FileUploadException e)
 		{
 			btnUpload.setEnabled(true);
 			Log.e(TAG, "onFailed() : " + e.getLocalizedMessage(), e);
