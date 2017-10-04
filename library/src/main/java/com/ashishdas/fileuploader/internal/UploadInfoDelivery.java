@@ -7,20 +7,21 @@
 
 package com.ashishdas.fileuploader.internal;
 
+import android.content.Context;
 import android.os.Handler;
 
 import com.ashishdas.fileuploader.FileUploadRequest;
-import com.ashishdas.fileuploader.FileUploadStatusListener;
 
-import java.lang.ref.WeakReference;
 import java.util.concurrent.Executor;
 
 public class UploadInfoDelivery
 {
+	private Context mContext;
 	private Executor mUploadStatusPoster;
 
-	public UploadInfoDelivery(final Handler handler)
+	public UploadInfoDelivery(final Context context, final Handler handler)
 	{
+		mContext = context;
 		mUploadStatusPoster = new Executor()
 		{
 			@Override
@@ -31,68 +32,45 @@ public class UploadInfoDelivery
 		};
 	}
 
-	public void post(final FileUploadRequest fileUploadRequest, final UploadInfo uploadInfo, WeakReference<FileUploadStatusListener> fileUploadStatusListener)
+	public Context getContext()
 	{
-		mUploadStatusPoster.execute(new UploadStatusDeliveryRunnable(fileUploadRequest, uploadInfo, fileUploadStatusListener));
+		return mContext;
+	}
+
+	public void post(final FileUploadRequest fileUploadRequest, final UploadInfo uploadInfo, UploadStatusListener uploadStatusListener)
+	{
+		mUploadStatusPoster.execute(new UploadStatusDeliveryRunnable(fileUploadRequest, uploadInfo, uploadStatusListener));
 	}
 
 	private class UploadStatusDeliveryRunnable implements Runnable
 	{
 		private final UploadInfo mUploadInfo;
 		private final FileUploadRequest mFileUploadRequest;
-		private final WeakReference<FileUploadStatusListener> mFileUploadStatusListener;
+		private final UploadStatusListener mFileUploadStatusListener;
 
 		public UploadStatusDeliveryRunnable(final FileUploadRequest fileUploadRequest, final UploadInfo uploadInfo,
-		                                    final WeakReference<FileUploadStatusListener> fileUploadStatusListener)
+		                                    final UploadStatusListener uploadStatusListener)
 		{
 			mUploadInfo = uploadInfo;
 			mFileUploadRequest = fileUploadRequest;
-			mFileUploadStatusListener = fileUploadStatusListener;
+			mFileUploadStatusListener = uploadStatusListener;
 		}
 
 		@Override
 		public synchronized void run()
 		{
-			UploadInfoDelivery.notifyStatus(mFileUploadRequest, mUploadInfo, mFileUploadStatusListener);
+			UploadInfoDelivery.notifyStatus(mContext, mFileUploadRequest, mUploadInfo, mFileUploadStatusListener);
 		}
 	}
 
-	public synchronized static void notifyStatus(final FileUploadRequest request, final UploadInfo uploadInfo,
-	                                             final WeakReference<FileUploadStatusListener> fileUploadStatusListener)
+	public synchronized static void notifyStatus(final Context context, final FileUploadRequest request, final UploadInfo uploadInfo,
+	                                             final UploadStatusListener uploadStatusListener)
 	{
-		if (fileUploadStatusListener != null)
+		if (uploadStatusListener != null)
 		{
-			FileUploadStatusListener listener = fileUploadStatusListener.get();
-			if (listener != null)
-			{
-				switch (uploadInfo.getStatus())
-				{
-					case Connecting:
-						listener.onConnecting(request);
-						break;
-					case Connected:
-						listener.onConnected(request);
-						break;
-					case Uploading:
-						listener.onUploading(request, uploadInfo.getFinished(), uploadInfo.getLength(), uploadInfo.getPercent());
-						break;
-					case Completed:
-						listener.onUploading(request, uploadInfo.getFinished(), uploadInfo.getLength(), uploadInfo.getPercent());
-						listener.onCompleted(request, uploadInfo.getServerResponse());
-						break;
-					case Paused:
-						listener.onPaused(request);
-						break;
-					case Canceled:
-						listener.onCanceled(request);
-						break;
-					case Failed:
-						listener.onFailed(request, uploadInfo.getFileUploadException());
-						break;
-				}
-			}
+			uploadStatusListener.onUploadStatus(request, uploadInfo);
 		}
 
-
+		UploadServiceHelper.sendBroadCast(context, request, uploadInfo);
 	}
 }

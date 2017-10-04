@@ -9,10 +9,7 @@ package com.ashishdas.fileuploader.internal;
 
 import com.ashishdas.fileuploader.FileUploadException;
 import com.ashishdas.fileuploader.FileUploadRequest;
-import com.ashishdas.fileuploader.FileUploadStatusListener;
 import com.ashishdas.fileuploader.FileUploadStatus;
-
-import java.lang.ref.WeakReference;
 
 public class UploadResponse
 {
@@ -20,14 +17,14 @@ public class UploadResponse
 	private UploadInfoDelivery mDelivery;
 
 	private final FileUploadRequest mFileUploadRequest;
-	private WeakReference<FileUploadStatusListener> mFileUploadStatusListener;
+	private UploadStatusListener mUploadStatusListener;
 
-	public UploadResponse(FileUploadRequest fileUploadRequest, UploadInfoDelivery delivery, FileUploadStatusListener fileUploadStatusListener)
+	public UploadResponse(FileUploadRequest fileUploadRequest, UploadInfoDelivery delivery, UploadStatusListener uploadStatusListener)
 	{
 		mDelivery = delivery;
 		mUploadInfo = new UploadInfo();
 		mFileUploadRequest = fileUploadRequest;
-		mFileUploadStatusListener = new WeakReference<>(fileUploadStatusListener);
+		mUploadStatusListener = uploadStatusListener;
 	}
 
 	public void onStarted(long length)
@@ -91,11 +88,11 @@ public class UploadResponse
 
 	private void notifyStatus()
 	{
-		UploadInfoDelivery.notifyStatus(mFileUploadRequest, mUploadInfo, mFileUploadStatusListener);
+		UploadInfoDelivery.notifyStatus(mDelivery.getContext(), mFileUploadRequest, mUploadInfo, mUploadStatusListener);
 	}
 
 	private void postDelivery()
 	{
-		mDelivery.post(mFileUploadRequest, mUploadInfo, mFileUploadStatusListener);
+		mDelivery.post(mFileUploadRequest, mUploadInfo, mUploadStatusListener);
 	}
 }

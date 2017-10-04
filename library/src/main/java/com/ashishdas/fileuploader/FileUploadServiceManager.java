@@ -16,8 +16,6 @@ import java.util.Map;
 
 public class FileUploadServiceManager
 {
-	private static final String TAG = FileUploadManager.class.getSimpleName();
-
 	public synchronized static boolean startup(@NonNull final Context context, @NonNull final String url, @NonNull final Map<String, String> headers)
 	{
 		return FileUploadManager.startup(context, url, headers);

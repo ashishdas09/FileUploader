@@ -13,10 +13,8 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.ashishdas.fileuploader.FileUploadException;
-import com.ashishdas.fileuploader.FileUploadRequest;
-import com.ashishdas.fileuploader.FileUploadStatusListener;
 import com.ashishdas.fileuploader.FileUploadManager;
+import com.ashishdas.fileuploader.FileUploadRequest;
 
 import java.io.File;
 import java.util.LinkedHashMap;
@@ -41,7 +39,7 @@ public class UploadManager
 		mContext = context;
 		mUploaderMap = new LinkedHashMap<>();
 		mExecutorService = Executors.newFixedThreadPool(MAX_THREAD_NUMBER);
-		mDelivery = new UploadInfoDelivery(mHandler);
+		mDelivery = new UploadInfoDelivery(mContext, mHandler);
 	}
 
 	public void setAllTaskCompletedListener(final FileUploadManager.OnAllTaskCompletedListener allTaskCompletedListener)
@@ -49,15 +47,14 @@ public class UploadManager
 		mAllTaskCompletedListener = allTaskCompletedListener;
 	}
 
-	public void upload(final FileUploadRequest fileUploadRequest, final FileUploadStatusListener fileUploadStatusListener)
+	public void upload(final FileUploadRequest fileUploadRequest, final UploadStatusListener uploadStatusListener)
 	{
 		try
 		{
-			Globals.assertFileUploadInfo(fileUploadRequest);
 			final String key = fileUploadRequest.getKey();
 			if (check(key))
 			{
-				UploadResponse uploadResponse = new UploadResponse(fileUploadRequest, mDelivery, fileUploadStatusListener);
+				UploadResponse uploadResponse = new UploadResponse(fileUploadRequest, mDelivery, uploadStatusListener);
 				Uploader uploader = new Uploader(new File(fileUploadRequest.getFilePath()), uploadResponse, mExecutorService, key, mFileUploaderDestroyedListener);
 				mUploaderMap.put(key, uploader);
 				uploader.start();
@@ -67,9 +64,11 @@ public class UploadManager
 		{
 			Log.e(TAG, "upload()", e);
 
-			if (fileUploadStatusListener != null)
+			if (uploadStatusListener != null)
 			{
-				fileUploadStatusListener.onFailed(fileUploadRequest, new FileUploadException(e.getLocalizedMessage()));
+				UploadInfo uploadInfo = new UploadInfo();
+				uploadInfo.setErrorMessage(e.getLocalizedMessage());
+				uploadStatusListener.onUploadStatus(fileUploadRequest, uploadInfo);
 			}
 		}
 	}

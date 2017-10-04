@@ -5,7 +5,7 @@
  * Author(s): Ashish Das
  ******************************************************************************/
 
-package com.ashishdas.fileuploader.internal;
+package com.ashishdas.fileuploader.internal.utils;
 
 import android.text.TextUtils;
 
