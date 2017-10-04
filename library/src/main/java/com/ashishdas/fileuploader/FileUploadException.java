@@ -1,6 +1,6 @@
 /*******************************************************************************
- * FileUploaderException.java
- * FileUploaderException
+ * FileUploadException.java
+ * FileUploadException
  * <p>
  * Author(s): Ashish Das
  ******************************************************************************/
@@ -9,32 +9,32 @@ package com.ashishdas.fileuploader;
 
 import android.text.TextUtils;
 
-public class FileUploaderException extends Exception
+public class FileUploadException extends Exception
 {
 	private String errorMessage;
 	private int errorCode;
 
-	public FileUploaderException(String detailMessage)
+	public FileUploadException(String detailMessage)
 	{
 		super(detailMessage);
 		this.errorMessage = detailMessage;
 	}
 
-	public FileUploaderException(int errorCode, String detailMessage)
+	public FileUploadException(int errorCode, String detailMessage)
 	{
 		super(detailMessage);
 		this.errorCode = errorCode;
 		this.errorMessage = detailMessage;
 	}
 
-	public FileUploaderException(int errorCode, Throwable throwable)
+	public FileUploadException(int errorCode, Throwable throwable)
 	{
 		super(throwable);
 		this.errorCode = errorCode;
 		setErrorMessage(throwable);
 	}
 
-	public FileUploaderException(int errorCode, String detailMessage, Throwable throwable)
+	public FileUploadException(int errorCode, String detailMessage, Throwable throwable)
 	{
 		super(detailMessage, throwable);
 		this.errorCode = errorCode;

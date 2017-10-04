@@ -1,31 +1,29 @@
 /*******************************************************************************
- * FileUploaderListener.java
- * FileUploaderListener
+ * FileUploadStatusListener.java
+ * FileUploadStatusListener
  * <p>
  * Author(s): Ashish Das
  ******************************************************************************/
 
 package com.ashishdas.fileuploader;
 
-import com.ashishdas.fileuploader.internal.FileUploadManager;
-
 /**
- * FileUploaderListener of upload status
+ * FileUploadStatusListener of upload status
  */
-public interface FileUploaderListener
+public interface FileUploadStatusListener
 {
 
-	void onStarted();
+	void onStarted(FileUploadRequest request);
 
 	/**
 	 * <p> this will be the the first method called by
 	 */
-	void onConnecting();
+	void onConnecting(FileUploadRequest request);
 
 	/**
 	 * connected with the http/https server this method will be invoke. If not method
 	 */
-	void onConnected();
+	void onConnected(FileUploadRequest request);
 
 	/**
 	 * <p> progress callback.
@@ -34,29 +32,29 @@ public interface FileUploaderListener
 	 * @param total    the total length of the file same value with method {@link }
 	 * @param progress the percent of progress (finished/total)*100
 	 */
-	void onUploading(long finished, long total, int progress);
+	void onUploading(FileUploadRequest request, long finished, long total, int progress);
 
 	/**
 	 * <p> upload complete
 	 */
-	void onCompleted(String serverResponse);
+	void onCompleted(FileUploadRequest request, String serverResponse);
 
 	/**
 	 * <p> if you invoke {@link FileUploadManager#pause(String)} or {@link FileUploadManager#pauseAll()}
 	 * this method will be invoke if the downloading task is successfully paused.
 	 */
-	void onPaused();
+	void onPaused(FileUploadRequest request);
 
 	/**
 	 * <p> if you invoke {@link FileUploadManager#cancel(String)} or {@link FileUploadManager#cancelAll()}
 	 * this method will be invoke if the downloading task is successfully canceled.
 	 */
-	void onCanceled();
+	void onCanceled(FileUploadRequest request);
 
 	/**
 	 * <p> download fail or exception callback
 	 *
 	 * @param e download exception
 	 */
-	void onFailed(FileUploaderException e);
+	void onFailed(FileUploadRequest request, FileUploadException e);
 }
