@@ -45,6 +45,7 @@ import com.karumi.dexter.listener.single.PermissionListener;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener
 {
 	private static final String TAG = MainActivity.class.getSimpleName();
+	private static final String KEY_UPLOAD_REQUEST = "Image";
 	private static final int ACTIVITY_REQUEST_CODE = 999;
 
 	private TextView tvServerUrl;
@@ -53,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 	private Button btnChooseImage;
 	private ProgressBar pbUploadProgress;
 	private Button btnUpload;
+	private ToggleButton tbServiceOption;
 
 	private Context mContext;
 	private String mImageFilePath;
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		btnChooseImage = (Button) findViewById(R.id.btn_choose_image);
 		pbUploadProgress = (ProgressBar) findViewById(R.id.pb_upload_progress);
 		btnUpload = (Button) findViewById(R.id.btn_upload);
+		tbServiceOption = (ToggleButton) findViewById(R.id.tb_service_option);
 
 		ibDelete.setOnClickListener(this);
 		btnChooseImage.setOnClickListener(this);
@@ -80,6 +83,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		FileUploadManager.startup(mContext, mLastServerUrl, null);
 
 		setUploadEnabled(false);
+	}
+
+	@Override
+	protected void onResume()
+	{
+		super.onResume();
+		FileUploadServiceManager.addFileUploadStatusListener(mFileUploadStatusListener);
+		if (tbServiceOption.isChecked() && FileUploadManager.isRunning(KEY_UPLOAD_REQUEST))
+		{
+			setUploadEnabled(true);
+			btnUpload.setEnabled(false);
+			tbServiceOption.setEnabled(false);
+		}
+	}
+
+	@Override
+	protected void onPause()
+	{
+		super.onPause();
+		FileUploadServiceManager.removeFileUploadStatusListener(mFileUploadStatusListener);
 	}
 
 	@Override
@@ -124,9 +147,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 						mLastServerUrl = serverUrl;
 						FileUploadManager.startup(mContext, serverUrl, null);
 					}
+
+					tbServiceOption.setEnabled(false);
 					btnUpload.setEnabled(false);
-					FileUploadRequest request = new FileUploadRequest(mImageFilePath);
-					if (((ToggleButton) findViewById(R.id.tb_service_option)).isChecked())
+					FileUploadRequest request = new FileUploadRequest(KEY_UPLOAD_REQUEST, mImageFilePath);
+					if (tbServiceOption.isChecked())
 					{
 						FileUploadServiceManager.upload(request);
 						return;
@@ -169,11 +194,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 	private void setUploadEnabled(boolean enabled)
 	{
+		tbServiceOption.setEnabled(enabled);
 		btnUpload.setEnabled(enabled);
-		pbUploadProgress.setEnabled(enabled);
 		pbUploadProgress.setProgress(0);
-		pbUploadProgress.setMax(100);
-
 		if (!enabled)
 		{
 			mImageFilePath = "";
