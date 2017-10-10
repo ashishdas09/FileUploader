@@ -10,12 +10,16 @@ package com.ashishdas.fileuploader;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import com.ashishdas.fileuploader.internal.FileUploadStatusObserver;
+import com.ashishdas.fileuploader.internal.UploadInfo;
 import com.ashishdas.fileuploader.internal.UploadServiceHelper;
 
 import java.util.Map;
 
 public class FileUploadServiceManager
 {
+	private static FileUploadStatusObserver mUploadStatusObserver = new FileUploadStatusObserver();
+
 	public synchronized static boolean startup(@NonNull final Context context, @NonNull final String url, @NonNull final Map<String, String> headers)
 	{
 		return FileUploadManager.startup(context, url, headers);
@@ -24,11 +28,33 @@ public class FileUploadServiceManager
 	public synchronized static void shutdown()
 	{
 		FileUploadManager.shutdown();
+		mUploadStatusObserver = new FileUploadStatusObserver();
 	}
 
-	public static synchronized boolean isStarted()
+	public synchronized static boolean isStarted()
 	{
 		return FileUploadManager.isStarted();
+	}
+
+	public synchronized static void addFileUploadStatusListener(final FileUploadStatusListener listener)
+	{
+		if (listener != null)
+		{
+			mUploadStatusObserver.addCallback(listener);
+		}
+	}
+
+	public synchronized static void removeFileUploadStatusListener(FileUploadStatusListener listener)
+	{
+		if (listener != null)
+		{
+			mUploadStatusObserver.removeCallback(listener);
+		}
+	}
+
+	synchronized static void notifyStatusListener(final FileUploadRequest request, final UploadInfo uploadInfo)
+	{
+		mUploadStatusObserver.notifyStatusListener(request, uploadInfo);
 	}
 
 	public static synchronized boolean upload(FileUploadRequest request)

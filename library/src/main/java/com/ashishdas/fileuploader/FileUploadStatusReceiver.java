@@ -41,5 +41,9 @@ public abstract class FileUploadStatusReceiver extends BroadcastReceiver impleme
 		}
 
 		Utils.notifyStatusListener(this, request, uploadInfo);
+		if(FileUploadServiceManager.isStarted())
+		{
+			FileUploadServiceManager.notifyStatusListener(request, uploadInfo);
+		}
 	}
 }
