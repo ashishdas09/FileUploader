@@ -20,7 +20,7 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".MainActivity$MyFileUploadStatusReceiver" >
+        <receiver android:name=".MyFileUploadStatusReceiver" >
             <intent-filter>
                 <action android:name="com.ashishdas.fileuploader.ACTION_BROAD_CAST" />
             </intent-filter>
