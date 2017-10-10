@@ -165,28 +165,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data)
 	{
-		if (resultCode == RESULT_OK)
+		if (resultCode == RESULT_OK && requestCode == ACTIVITY_REQUEST_CODE)
 		{
-			if (requestCode == ACTIVITY_REQUEST_CODE)
+			// Get the uri from data
+			Uri selectedImageUri = getUriFromData(data);
+			if (null != selectedImageUri)
 			{
-				// Get the uri from data
-				Uri selectedImageUri = getUriFromData(data);
-				if (null != selectedImageUri)
+				try
 				{
-					try
-					{
-						mImageFilePath = getPathFromURI(this, selectedImageUri);
-						Log.i(TAG, "Image Path : " + mImageFilePath);
-						// Set the image in ImageView
-						ivImagePreview.setImageURI(selectedImageUri);
-						setUploadEnabled(true);
-					}
-					catch (Exception e)
-					{
-						String log = "Please select a valid image file. " + selectedImageUri.toString();
-						Log.e(TAG, log);
-						Toast.makeText(mContext, log, Toast.LENGTH_LONG).show();
-					}
+					mImageFilePath = getPathFromURI(this, selectedImageUri);
+					Log.i(TAG, "Image Path : " + mImageFilePath);
+					// Set the image in ImageView
+					ivImagePreview.setImageURI(selectedImageUri);
+					setUploadEnabled(true);
+				}
+				catch (Exception e)
+				{
+					String log = "Please select a valid image file. " + selectedImageUri.toString();
+					Log.e(TAG, log);
+					Toast.makeText(mContext, log, Toast.LENGTH_LONG).show();
 				}
 			}
 		}
